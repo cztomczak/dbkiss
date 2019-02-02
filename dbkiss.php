@@ -1,26 +1,28 @@
 <?php
-/*
-	DBKiss 1.16 (2014-01-04)
-	Author: Czarek Tomczak [czarek.tomczak@@gmail.com]
-	Web site: http://code.google.com/p/dbkiss/
-	License: BSD revised (free for any use)
-*/
+// Copyright (c) 2008 Czarek Tomczak
+// All rights reserved. Licensed under BSD 3-clause license.
+// Project website: https://github.com/cztomczak/dbkiss
 
 // zlib conflicts with ob_gzhandler.
-ini_set('zlib.output_compression', 0); // can we set it during run-time? or php.ini only?
+ini_set('zlib.output_compression', 0);
 ini_set('output_buffering', 0);
 
-if (ini_get('zlib.output_compression')) { // check it to be sure.
+if (ini_get('zlib.output_compression')) {
 	ob_start();
 } else {
-	ob_start('ob_gzhandler');
+	if (function_exists('ob_gzhandler')) {
+		ob_start('ob_gzhandler');
+	} else {
+		ob_start();
+	}
 }
 
-// Some of the features in the SQL editor require creating 'dbkiss_sql' directory,
-// where history of queries are kept and other data. If the script has permission
-// it will create that directory automatically, otherwise you need to create that
-// directory manually and make it writable. You can also set it to empty '' string,
-// but some of the features in the sql editor will not work (templates, pagination)
+// Some of the features in the SQL editor require creating 'dbkiss_sql'
+// directory, where history of queries are kept and other data. If the
+// script has permission it will create that directory automatically,
+// otherwise you need to create that directory manually and make it
+// writable. You can also set it to empty '' string, but some of the
+// features in the sql editor will not work (templates, pagination).
 
 if (!defined('DBKISS_SQL_DIR')) {
 	define('DBKISS_SQL_DIR', 'dbkiss_sql');
@@ -30,13 +32,13 @@ if (!defined('DBKISS_SQL_DIR')) {
 	An example configuration script that will automatically connect to localhost database.
 	This is useful on localhost if you don't want to see the "Connect" screen.
 
-	mysql_local.php:
+	mysqli_local.php:
 	---------------------------------------------------------------------
 	define('COOKIE_PREFIX', str_replace('.php', '', basename(__FILE__)).'_');
-	define('DBKISS_SQL_DIR', 'dbkiss_mysql');
+	define('DBKISS_SQL_DIR', 'dbkiss_mysqli');
 
 	$cookie = array(
-		'db_driver' => 'mysql',
+		'db_driver' => 'mysqli',
 		'db_server' => 'localhost',
 		'db_name' => 'test',
 		'db_user' => 'root',
@@ -61,74 +63,91 @@ if (!defined('DBKISS_SQL_DIR')) {
 /*
 	Changelog:
 
+	1.20
+		* Support for PHP 7 and PostgreSQL (Issue #2)
+		* Support for MySQL in PHP 7 via mysqli driver (Issue #3)
 	1.16
-	* Compatibility fixes for PHP 5.5.7
-	* Permanent links for saved SQL templates, the url in browser
-	  includes template name (Issue 3)
-	* After connecting to database you will be redirected to the
-	  url you came from
+		* Compatibility fixes for PHP 5.5.7
+		* Permanent links for saved SQL templates, the url in browser
+		includes template name (Issue 3)
+		* After connecting to database you will be redirected to the
+		url you came from
 	1.15
-	* Fixed Postgresql 9 bug on Linux, no data rows were displayed
-	for SELECT queries in the SQL editor (Issue 5).
+		* Fixed Postgresql 9 bug on Linux, no data rows were displayed
+		  for SELECT queries in the SQL editor (Issue 5).
 	1.14
-	* IIS server fixes: $_SERVER['SERVER_ADDR'] missing
+		* IIS server fixes: $_SERVER['SERVER_ADDR'] missing
 	1.13
-	* Table names and column names may start with numeric values ex. `52-644` as table name is now allowed.
+		* Table names and column names may start with numeric values ex.
+		  `52-644` as table name is now allowed.
 	1.12
-	* Fixed "order by" bug in views.
+		* Fixed "order by" bug in views.
 	1.11
-	* Links in data output are now clickable. Clicking them does not reveal the location of your dbkiss script to external sites.
+		* Links in data output are now clickable. Clicking them does not reveal
+		the location of your dbkiss script to external sites.
 	1.10
-	* Support for views in Postgresql (mysql had it already).
-	* Views are now displayed in a seperate listing, to the right of the tables on main page.
-	* Secure redirection - no referer header sent - when clicking external links (ex. powered by), so that the location of the dbkiss script on your site is not revealed.
+		* Support for views in Postgresql (mysql had it already).
+		* Views are now displayed in a seperate listing, to the right of
+		  the tables on main page.
+		* Secure redirection - no referer header sent - when clicking external
+		  links (ex. powered by), so that the location of the dbkiss script on
+		  your site is not revealed.
 	1.09
-	* CSV export in sql editor and table view (feature sponsored by Patrick McGovern)
+		* CSV export in sql editor and table view (feature sponsored by
+		Patrick McGovern)
 	1.08
-	* date.timezone E_STRICT error fixed
+		* date.timezone E_STRICT error fixed
 	1.07
-	* mysql tables with dash in the name generated errors, now all tables in mysql driver are
-		enquoted with backtick.
+		* mysql tables with dash in the name generated errors, now all
+		  tables in mysql driver are enquoted with backtick.
 	1.06
-	* postgresql fix
+		* postgresql fix
 	1.05
-	* export of all structure and data does take into account the table name filter on the main page,
-		so you can filter the tables that you want to export.
+		* export of all structure and data does take into account the table
+		  name filter on the main page, so you can filter the tables that
+		  you want to export.
 	1.04
-	* exporting all structure/data didn't work (ob_gzhandler flush bug)
-	* cookies are now set using httponly option
-	* text editor complained about bad cr/lf in exported sql files
-		(mysql create table uses \n, so insert queries need to be seperated by \n and not \r\n)
+		* exporting all structure/data didn't work (ob_gzhandler flush bug)
+		* cookies are now set using httponly option
+		* text editor complained about bad cr/lf in exported sql files
+		  (mysql create table uses \n, so insert queries need to be seperated
+		  by \n and not \r\n)
 	1.03
-	* re-created array_walk_recursive for php4 compatibility
-	* removed stripping slashes from displayed content
-	* added favicon (using base64_encode to store the icon in php code, so it is still one-file database browser)
+		* re-created array_walk_recursive for php4 compatibility
+		* removed stripping slashes from displayed content
+		* added favicon (using base64_encode to store the icon in php code,
+		  so it is still one-file database browser)
 	1.02
-	* works with short_open_tag disabled
-	* code optimizations/fixes
-	* postgresql error fix for large tables
+		* works with short_open_tag disabled
+		* code optimizations/fixes
+		* postgresql error fix for large tables
 	1.01
-	* fix for mysql 3.23, which doesnt understand "LIMIT x OFFSET z"
+		* fix for mysql 3.23, which doesnt understand "LIMIT x OFFSET z"
 	1.00
-	* bug fixes
-	* minor feature enhancements
-	* this release is stable and can be used in production environment
+		* bug fixes
+		* minor feature enhancements
+		* this release is stable and can be used in production environment
 	0.61
-	* upper casing keywords in submitted sql is disabled (it also modified quoted values)
-	* sql error when displaying table with 0 rows
-	* could not connect to database that had upper case characters
+		* upper casing keywords in submitted sql is disabled (it also
+		  modified quoted values)
+		* sql error when displaying table with 0 rows
+		* could not connect to database that had upper case characters
 
 */
 
 // todo: php error handler which cancels buffer output and exits on error
 // todo: XSS and CSRF protection.
 // todo: connect screen: [x] create database (if not exists) [charset]
-// todo: connect screen: database (optional, if none provided will select the first database the user has access to)
-// todo: mysqli driver (check if mysql extension is loaded, if not try to use mysqli)
+// todo: connect screen: database (optional, if none provided will select
+//       the first database the user has access to)
 // todo: support for the enum field type when editing row
 // todo: search whole database form should appear also on main page
-// todo: improve detecting primary keys when editing row (querying information_schema , for mysql > 4)
-// todo: when dbkiss_sql dir is missing, display a message in sql editor that some features won't work (templates, pagination) currently it displays a message to create that dir and EXIT, but should allow basic operations
+// todo: improve detecting primary keys when editing row (querying
+//       information_schema , for mysql > 4)
+// todo: when dbkiss_sql dir is missing, display a message in sql editor
+//       that some features won't work (templates, pagination) currently
+//       it displays a message to create that dir and EXIT, but should
+//       allow basic operations.
 // todo: "Insert" on table view page
 // todo: edit table structure
 
@@ -172,7 +191,8 @@ function errorHandler($errno, $errstr, $errfile, $errline)
 	global $Global_LastError;
 	$Global_LastError = $errstr;
 
-	// Check with error_reporting, if statement is preceded with @ we have to ignore it.
+	// Check with error_reporting, if statement is preceded
+	// with @ we have to ignore it.
 	if (!($errno & error_reporting())) {
 		return;
 	}
@@ -207,7 +227,12 @@ function errorHandler($errno, $errstr, $errfile, $errline)
 	printf("</style></head><body>");
 
 	printf("<h1>PHP Error</h1>");
-	printf($msg);
+	print($msg);
+
+	if (!isset($_SERVER["SERVER_ADDR"])
+			|| $_SERVER["SERVER_ADDR"] == "unknown") {
+		$_SERVER["SERVER_ADDR"] = $_SERVER["SERVER_NAME"];
+	}
 
 	if ("127.0.0.1" == $_SERVER["SERVER_ADDR"] && "127.0.0.1" == $_SERVER["REMOTE_ADDR"])
 	{
@@ -305,9 +330,9 @@ function create_links($text)
 	// Protocols: http, https, ftp, irc, svn
 	// Parse emails also?
 
-	$text = preg_replace('#([a-z]+://[a-zA-Z0-9\.\,\;\:\[\]\{\}\-\_\+\=\!\@\#\%\&\(\)\/\?\`\~]+)#e', 'create_links_eval("\\1")', $text);
+	$text = preg_replace_callback('#([a-z]+://[a-zA-Z0-9\.\,\;\:\[\]\{\}\-\_\+\=\!\@\#\%\&\(\)\/\?\`\~]+)#', 'create_links_eval', $text);
 
-	// Excaptions:
+	// Exceptions:
 
 	// 1) cut last char if link ends with ":" or ";" or "." or "," - cause in 99% cases that char doesnt belong to the link
 	// (check if previous char was "=" then let it stay cause that could be some variable in a query, some kind of separator)
@@ -324,6 +349,7 @@ function create_links($text)
 }
 function create_links_eval($link)
 {
+	$link = $link[0];
 	$orig_link = $link;
 	$cutted = "";
 
@@ -619,7 +645,7 @@ $charset2[] = $page_charset;
 $charset1 = charset_assoc($charset1);
 $charset2 = charset_assoc($charset2);
 
-$driver_arr = array('mysql', 'pgsql');
+$driver_arr = array('mysqli', 'pgsql');
 $driver_arr = array_assoc($driver_arr);
 
 function array_assoc($a)
@@ -671,7 +697,7 @@ if (!$db_pass || (!$db_driver || !$db_server || !$db_name || !$db_user))
 		{
 			$db_test = true;
 			db_connect($db_server, $db_name, $db_user, $db_pass);
-			if (is_resource($db_link))
+			if ($db_link)
 			{
 				$time = post('remember') ? COOKIE_WEEK : COOKIE_SESS;
 				cookie_set('db_driver', $db_driver, $time);
@@ -779,7 +805,7 @@ if (!$db_pass || (!$db_driver || !$db_server || !$db_name || !$db_user))
 
 db_connect($db_server, $db_name, $db_user, $db_pass);
 
-if ($db_charset && 'mysql' == $db_driver) {
+if ($db_charset && 'mysqli' == $db_driver) {
 	db_exe("SET NAMES $db_charset");
 }
 
@@ -833,29 +859,29 @@ function db_connect($db_server, $db_name, $db_user, $db_pass)
 	if (!extension_loaded($db_driver)) {
 		trigger_error($db_driver.' extension not loaded', E_USER_ERROR);
 	}
-	if ('mysql' == $db_driver)
+	if ('mysqli' == $db_driver)
 	{
-		$db_link = @mysql_connect($db_server, $db_user, $db_pass);
-		if (!is_resource($db_link)) {
+		$db_link = @mysqli_connect($db_server,  $db_user,  $db_pass);
+		if (!$db_link) {
 			if ($db_test) {
-				$db_test = 'mysql_connect() failed: '.db_error();
+				$db_test = 'mysqli_connect() failed: '.db_error();
 				return;
 			} else {
 				cookie_del('db_pass');
 				cookie_del('db_name');
-				die('mysql_connect() failed: '.db_error());
+				die('mysqli_connect() failed: '.db_error());
 			}
 		}
-		if (!@mysql_select_db($db_name, $db_link)) {
+		if (!@mysqli_select_db($db_link, $db_name)) {
 			$error = db_error();
 			db_close();
 			if ($db_test) {
-				$db_test = 'mysql_select_db() failed: '.$error;
+				$db_test = 'mysqli_select_db() failed: '.$error;
 				return;
 			} else {
 				cookie_del('db_pass');
 				cookie_del('db_name');
-				die('mysql_select_db() failed: '.$error);
+				die('mysqli_select_db() failed: '.$error);
 			}
 		}
 	}
@@ -864,6 +890,9 @@ function db_connect($db_server, $db_name, $db_user, $db_pass)
 		$conn = sprintf("host='%s' dbname='%s' user='%s' password='%s'", $db_server, $db_name, $db_user, $db_pass);
 		$db_link = @pg_connect($conn);
 		if (!is_resource($db_link)) {
+			$db_link = null;
+		}
+		if (!$db_link) {
 			if ($db_test) {
 				$db_test = 'pg_connect() failed: '.db_error();
 				return;
@@ -883,9 +912,9 @@ function db_cleanup()
 function db_close()
 {
 	global $db_driver, $db_link;
-	if (is_resource($db_link)) {
-		if ('mysql' == $db_driver) {
-			mysql_close($db_link);
+	if ($db_link) {
+		if ('mysqli' == $db_driver) {
+			((is_null($___mysqli_res = mysqli_close($db_link))) ? false : $___mysqli_res);
 		}
 		if ('pgsql' == $db_driver) {
 			pg_close($db_link);
@@ -899,11 +928,11 @@ function db_query($query, $dat = false)
 	if (!db_is_safe($query)) {
 		return false;
 	}
-	if ('mysql' == $db_driver)
+	if ('mysqli' == $db_driver)
 	{
-		$rs = mysql_query($query, $db_link);
+		$rs = mysqli_query($db_link, $query);
 		if (!$rs) {
-			trigger_error("mysql_query() failed: $query.<br>Error: ".db_error(), E_USER_ERROR);
+			trigger_error("mysqli_query() failed: $query.<br>Error: ".db_error(), E_USER_ERROR);
 		}
 		return $rs;
 	}
@@ -954,15 +983,15 @@ function db_one($query, $dat = false)
 function db_row($query, $dat = false)
 {
 	global $db_driver, $db_link;
-	if ('mysql' == $db_driver)
+	if ('mysqli' == $db_driver)
 	{
-		if (is_resource($query)) {
+		if (is_resource($query) || is_object($query)) {
 			$rs = $query;
-			return mysql_fetch_assoc($rs);
+			return mysqli_fetch_assoc($rs);
 		} else {
 			$query = db_limit($query, 0, 1);
 			$rs = db_query($query, $dat);
-			$row = mysql_fetch_assoc($rs);
+			$row = mysqli_fetch_assoc($rs);
 			db_free($rs);
 			if ($row) {
 				return $row;
@@ -990,11 +1019,11 @@ function db_row($query, $dat = false)
 function db_row_num($query, $dat = false)
 {
 	global $db_driver, $db_link;
-	if ('mysql' == $db_driver)
+	if ('mysqli' == $db_driver)
 	{
-		if (is_resource($query)) {
+		if (is_resource($query) || is_object($query)) {
 			$rs = $query;
-			return mysql_fetch_row($rs);
+			return mysqli_fetch_row($rs);
 		} else {
 			$rs = db_query($query, $dat);
 			if (!$rs) {
@@ -1008,7 +1037,7 @@ function db_row_num($query, $dat = false)
 				exit;
 				*/
 			}
-			$row = mysql_fetch_row($rs);
+			$row = mysqli_fetch_row($rs);
 			db_free($rs);
 			if ($row) {
 				return $row;
@@ -1037,8 +1066,8 @@ function db_list($query)
 	global $db_driver, $db_link;
 	$rs = db_query($query);
 	$ret = array();
-	if ('mysql' == $db_driver) {
-		while ($row = mysql_fetch_assoc($rs)) {
+	if ('mysqli' == $db_driver) {
+		while ($row = mysqli_fetch_assoc($rs)) {
 			$ret[] = $row;
 		}
 	}
@@ -1069,9 +1098,9 @@ function db_assoc($query)
 		}
 		return $rows;
 	}
-	if ('mysql' == $db_driver)
+	if ('mysqli' == $db_driver)
 	{
-		mysql_data_seek($rs, 0);
+		mysqli_data_seek($rs, 0);
 	}
 	if ('pgsql' == $db_driver)
 	{
@@ -1120,7 +1149,7 @@ function db_limit($query, $offset, $limit)
 	$query = preg_replace('#^([\s\S]+)LIMIT\s+\d+\s+OFFSET\s+\d+\s*$#i', '$1', $query);
 	$query = preg_replace('#^([\s\S]+)LIMIT\s+\d+\s*,\s*\d+\s*$#i', '$1', $query);
 
-	if ('mysql' == $db_driver) {
+	if ('mysqli' == $db_driver) {
 		// mysql 3.23 doesn't understand "LIMIT x OFFSET z"
 		return $query." LIMIT $offset, $limit";
 	} else {
@@ -1130,8 +1159,8 @@ function db_limit($query, $offset, $limit)
 function db_escape($value)
 {
 	global $db_driver, $db_link;
-	if ('mysql' == $db_driver) {
-		return mysql_real_escape_string($value, $db_link);
+	if ('mysqli' == $db_driver) {
+		return mysqli_real_escape_string($db_link, $value);
 	}
 	if ('pgsql' == $db_driver) {
 		return pg_escape_string($value);
@@ -1209,36 +1238,36 @@ function db_free($rs)
 {
 	global $db_driver;
 	if (db_is_result($rs)) {
-		if ('mysql' == $db_driver) return mysql_free_result($rs);
+		if ('mysqli' == $db_driver) return ((mysqli_free_result($rs) || (is_object($rs) && (get_class($rs) == "mysqli_result"))) ? true : false);
 		if ('pgsql' == $db_driver) return pg_free_result($rs);
 	}
 }
 function db_is_result($rs)
 {
 	global $db_driver;
-	if ('mysql' == $db_driver) return is_resource($rs);
+	if ('mysqli' == $db_driver) return is_object($rs) || is_resource($rs);
 	if ('pgsql' == $db_driver) return is_object($rs) || is_resource($rs);
 }
 function db_error()
 {
 	global $db_driver, $db_link;
-	if ('mysql' == $db_driver) {
-		if (is_resource($db_link)) {
-			if (mysql_error($db_link)) {
-				return mysql_error($db_link). ' ('. mysql_errno($db_link).')';
+	if ('mysqli' == $db_driver) {
+		if ($db_link) {
+			if (mysqli_error($db_link)) {
+				return mysqli_error($db_link). ' ('. mysqli_errno($db_link).')';
 			} else {
 				return false;
 			}
 		} else {
-			if (mysql_error()) {
-				return mysql_error(). ' ('. mysql_errno().')';
+			if (mysqli_connect_errno()) {
+				return mysqli_connect_error(). ' ('. mysqli_connect_errno().')';
 			} else {
 				return false;
 			}
 		}
 	}
 	if ('pgsql' == $db_driver) {
-		if (is_resource($db_link)) {
+		if ($db_link) {
 			return pg_last_error($db_link);
 		}
 	}
@@ -1246,7 +1275,7 @@ function db_error()
 function db_begin()
 {
 	global $db_driver;
-	if ('mysql' == $db_driver) {
+	if ('mysqli' == $db_driver) {
 		db_exe('SET AUTOCOMMIT=0');
 		db_exe('BEGIN');
 	}
@@ -1257,7 +1286,7 @@ function db_begin()
 function db_end()
 {
 	global $db_driver;
-	if ('mysql' == $db_driver) {
+	if ('mysqli' == $db_driver) {
 		db_exe('COMMIT');
 		db_exe('SET AUTOCOMMIT=1');
 	}
@@ -1268,7 +1297,7 @@ function db_end()
 function db_rollback()
 {
 	global $db_driver;
-	if ('mysql' == $db_driver) {
+	if ('mysqli' == $db_driver) {
 		db_exe('ROLLBACK');
 		db_exe('SET AUTOCOMMIT=1');
 	}
@@ -1339,7 +1368,7 @@ function db_insert($tbl, $dat)
 			$vals .= ',' . db_quote($v);
 		}
 	}
-	if ('mysql' == $db_driver) {
+	if ('mysqli' == $db_driver) {
 		$tbl = "`$tbl`";
 	}
 	$q = "INSERT INTO $tbl ($cols) VALUES ($vals)";
@@ -1366,7 +1395,7 @@ function db_update($tbl, $dat, $wh)
 	if (is_array($wh)) {
 		$wh = db_where($wh, null, $omit_where = true);
 	}
-	if ('mysql' == $db_driver) {
+	if ('mysqli' == $db_driver) {
 		$tbl = "`$tbl`";
 	}
 	$q = "UPDATE $tbl SET $set WHERE $wh";
@@ -1375,8 +1404,8 @@ function db_update($tbl, $dat, $wh)
 function db_insert_id($table = null, $pk = null)
 {
 	global $db_driver, $db_link;
-	if ('mysql' == $db_driver) {
-		return mysql_insert_id($_db['conn_id']);
+	if ('mysqli' == $db_driver) {
+		return ((is_null($___mysqli_res = mysqli_insert_id($_db['conn_id']))) ? false : $___mysqli_res);
 	}
 	if ('pgsql' == $db_driver) {
 		if (!$table || !$pk) {
@@ -1398,11 +1427,11 @@ function db_cond($k, $v)
 function list_dbs()
 {
 	global $db_driver, $db_link;
-	if ('mysql' == $db_driver)
+	if ('mysqli' == $db_driver)
 	{
-		$result = mysql_query('SHOW DATABASES', $db_link);
+		$result = mysqli_query($db_link, 'SHOW DATABASES');
 		$ret = array();
-		while ($row = mysql_fetch_row($result)) {
+		while ($row = mysqli_fetch_row($result)) {
 			$ret[$row[0]] = $row[0];
 		}
 		return $ret;
@@ -1419,8 +1448,8 @@ function views_supported()
 		return $ret;
 	}
 	global $db_driver, $db_link;
-	if ('mysql' == $db_driver) {
-		$version = mysql_get_server_info($db_link);
+	if ('mysqli' == $db_driver) {
+		$version = ((is_null($___mysqli_res = mysqli_get_server_info($db_link))) ? false : $___mysqli_res);
 		if (strpos($version, "-") !== false) {
 			$version = substr($version, 0, strpos($version, "-"));
 		}
@@ -1464,7 +1493,7 @@ function list_tables($views_mode=false)
 
 	static $all_tables; // tables and views
 
-	if ('mysql' == $db_driver)
+	if ('mysqli' == $db_driver)
 	{
 		if (!isset($all_tables)) {
 			$all_tables = db_assoc("SHOW FULL TABLES");
@@ -1548,7 +1577,7 @@ function IsTableAView($table)
 function quote_table($table)
 {
 	global $db_driver;
-	if ('mysql' == $db_driver) {
+	if ('mysqli' == $db_driver) {
 		return "`$table`";
 	} else {
 		return "\"$table\"";
@@ -1557,7 +1586,7 @@ function quote_table($table)
 function table_structure($table)
 {
 	global $db_driver;
-	if ('mysql' == $db_driver)
+	if ('mysqli' == $db_driver)
 	{
 		$query = "SHOW CREATE TABLE `$table`";
 		$row = db_row_num($query);
@@ -1573,7 +1602,7 @@ function table_data($table)
 {
 	global $db_driver;
 	set_time_limit(0);
-	if ('mysql' == $db_driver) {
+	if ('mysqli' == $db_driver) {
 		$query = "SELECT * FROM `$table`";
 	} else {
 		$query = "SELECT * FROM $table";
@@ -1582,7 +1611,7 @@ function table_data($table)
 	$count = 0;
 	while ($row = db_row($result))
 	{
-		if ('mysql' == $db_driver) {
+		if ('mysqli' == $db_driver) {
 			echo 'INSERT INTO `'.$table.'` VALUES (';
 		}
 		if ('pgsql' == $db_driver) {
@@ -1611,12 +1640,12 @@ function table_status()
 	// Size is not supported for Views, only for Tables.
 
 	global $db_driver, $db_link, $db_name;
-	if ('mysql' == $db_driver)
+	if ('mysqli' == $db_driver)
 	{
 		$status = array();
 		$status['total_size'] = 0;
-		$result = mysql_query("SHOW TABLE STATUS FROM `$db_name`", $db_link);
-		while ($row = mysql_fetch_assoc($result)) {
+		$result = mysqli_query($db_link, "SHOW TABLE STATUS FROM `$db_name`");
+		while ($row = mysqli_fetch_assoc($result)) {
 			if (!is_numeric($row['Data_length'])) {
 				// Data_length for Views is NULL.
 				continue;
@@ -1652,7 +1681,7 @@ function table_columns($table)
 	if (isset($cache[$table])) {
 		return $cache[$table];
 	}
-	if ('mysql' == $db_driver) {
+	if ('mysqli' == $db_driver) {
 		$row = db_row("SELECT * FROM `$table`");
 	} else {
 		$row = db_row("SELECT * FROM $table");
@@ -1670,7 +1699,7 @@ function table_columns($table)
 function table_types($table)
 {
 	global $db_driver;
-	if ('mysql' == $db_driver)
+	if ('mysqli' == $db_driver)
 	{
 		$rows = db_list("SHOW COLUMNS FROM `$table`");
 		$types = array();
@@ -1688,7 +1717,7 @@ function table_types($table)
 function table_types2($table)
 {
 	global $db_driver;
-	if ('mysql' == $db_driver)
+	if ('mysqli' == $db_driver)
 	{
 		$types = array();
 		$rows = @db_list("SHOW COLUMNS FROM `$table`");
@@ -2061,9 +2090,9 @@ function import($file, $ignore_errors = false, $transaction = false, $force_myis
 			continue;
 		}
 
-		if ('mysql' == $db_driver)
+		if ('mysqli' == $db_driver)
 		{
-			$result = @mysql_query($value.';', $db_link);
+			$result = @mysqli_query($db_link, $value.';');
 		}
 		if ('pgsql' == $db_driver)
 		{
@@ -2821,13 +2850,13 @@ function pad_zeros($number, $zeros)
 }
 function charset_fix_invalid($s)
 {
-	$fix = 'Ä‚ìÑ¢ûùòôî√';
+	$fix = '‚Ç¨√¢‚Äú‚Äû¬¢≈æ¬ùÀú‚Ñ¢‚Äù√É';
 	$s = str_replace(str_array($fix), '', $s);
 	return $s;
 }
 function charset_is_invalid($s)
 {
-	$fix = 'Ä‚ìÑ¢ûùòôî√';
+	$fix = '‚Ç¨√¢‚Äú‚Äû¬¢≈æ¬ùÀú‚Ñ¢‚Äù√É';
 	$fix = str_array($fix);
 	foreach ($fix as $char) {
 		if (str_has($s, $char)) {
@@ -2850,8 +2879,8 @@ function charset_fix($string)
 }
 function charset_win_is($string)
 {
-	$win = 'π•Ê∆Í ≥£Ò—Û”úåüèøØ';
-	$iso = '±°Ê∆Í ≥£Ò—Û”∂¶º¨øØ';
+	$win = '¬π¬•√¶√Ü√™√ä¬≥¬£√±√ë√≥√ì≈ì≈í≈∏¬è¬ø¬Ø';
+	$iso = '¬±¬°√¶√Ü√™√ä¬≥¬£√±√ë√≥√ì¬∂¬¶¬º¬¨¬ø¬Ø';
 	for ($i=0; $i<strlen($win); $i++) {
 		if ($win{$i} != $iso{$i}) {
 			if (strstr($string, $win{$i}) !== false) {
@@ -2863,8 +2892,8 @@ function charset_win_is($string)
 }
 function charset_win_fix($string)
 {
-	$win = 'π•Ê∆Í ≥£Ò—Û”úåüèøØ';
-	$iso = '±°Ê∆Í ≥£Ò—Û”∂¶º¨øØ';
+	$win = '¬π¬•√¶√Ü√™√ä¬≥¬£√±√ë√≥√ì≈ì≈í≈∏¬è¬ø¬Ø';
+	$iso = '¬±¬°√¶√Ü√™√ä¬≥¬£√±√ë√≥√ì¬∂¬¶¬º¬¨¬ø¬Ø';
 	$srh = array();
 	$rpl = array();
 	for ($i = 0; $i < strlen($win); $i++) {
@@ -3130,11 +3159,11 @@ function iso_chars()
 }
 function iso_chars_lower()
 {
-	return '±ÊÍ≥ÒÛ∂ºø';
+	return 'ÔøΩÔøΩÔøΩÔøΩÛ∂ºø';
 }
 function iso_chars_upper()
 {
-	return '°∆ £—”¶¨Ø';
+	return 'ÔøΩÔøΩ £ÔøΩ”¶ÔøΩÔøΩ';
 }
 function array_first_key($arr)
 {
@@ -3417,7 +3446,7 @@ function powered_by()
 			w.document.close();
 		}
 		</script>
-		<div style="text-align: center; margin-top: 2em; border-top: #ccc 1px solid; padding-top: 0.5em;">Powered by <a href="javascript:void(0)" onclick="link_noreferer('https://code.google.com/p/dbkiss/')">dbkiss</a></div>
+		<div style="text-align: center; margin-top: 2em; border-top: #ccc 1px solid; padding-top: 0.5em;">Powered by <a href="javascript:void(0)" onclick="link_noreferer('https://github.com/cztomczak/dbkiss')">dbkiss</a></div>
 	<?php
 }
 
@@ -3766,9 +3795,9 @@ function listing($base_query, $md5_get = false)
 		$rs = @db_query($query);
 		if ($rs) {
 			if ($rs === true) {
-				if ('mysql' == $db_driver)
+				if ('mysqli' == $db_driver)
 				{
-					$affected = mysql_affected_rows($db_link);
+					$affected = mysqli_affected_rows($db_link);
 					$time = time_end($time);
 					$ret['data_html'] = '<b>'.$affected.'</b> rows affected.<br>Time: <b>'.$time.'</b> sec';
 					return $ret;
@@ -4372,7 +4401,7 @@ function listing($base_query, $md5_get = false)
 		<input type="checkbox" name="only_marked" id="only_marked" value="1" <?php echo checked($post['only_marked'] || $get['only_marked']);?>>
 	</td>
 	<td nowrap>
-		<label for="only_marked">only marked</label>
+		<label for="only_marked">only marked with @</label>
 	</td>
 	<td nowrap>
 		&nbsp;
@@ -4501,7 +4530,7 @@ function listing($base_query, $md5_get = false)
 				if (is_numeric($search)) {
 					$where .= "$col = '$search'";
 				} else {
-					if ('mysql' == $db_driver) {
+					if ('mysqli' == $db_driver) {
 						$where .= "$col LIKE '%$search%'";
 					} else if ('pgsql' == $db_driver) {
 						$where .= "$col ILIKE '%$search%'";
@@ -4590,9 +4619,11 @@ function listing($base_query, $md5_get = false)
 			echo '<pre>';
 			echo 'Table: '.get('viewtable')."\r\n";
 			echo str_repeat('-', 80)."\r\n";
-			foreach ($rows as $row) {
-				echo indenthead($row);
-				echo str_repeat('-', 80)."\r\n";
+			if (isset($rows)) {
+				foreach ($rows as $row) {
+					echo indenthead($row);
+					echo str_repeat('-', 80)."\r\n";
+				}
 			}
 			echo '</pre>';
 			exit;
@@ -4895,7 +4926,7 @@ function listing($base_query, $md5_get = false)
 					if (is_numeric($search)) {
 						$where .= "$col = '$search'";
 					} else {
-						if ('mysql' == $db_driver) {
+						if ('mysqli' == $db_driver) {
 							$where .= "$col LIKE '%$search%'";
 						} else if ('pgsql' == $db_driver) {
 							$where .= "$col ILIKE '%$search%'";
@@ -5102,7 +5133,7 @@ document.onkeydown = table_filter_keydown;
 	<tr>
 		<td><a class=blue href="<?php echo $_SERVER['PHP_SELF'];?>?viewtable=<?php echo $table;?>"><?php echo $table;?></a></td>
 		<?php
-			if ('mysql' == $db_driver) {
+			if ('mysqli' == $db_driver) {
 				// $table_enq = quote_table($table);
 				// $count = db_one("SELECT COUNT(*) FROM $table_enq");
 				$count = $status[$table]['count'];
