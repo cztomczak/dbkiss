@@ -889,7 +889,7 @@ function db_connect($db_server, $db_name, $db_user, $db_pass)
 	{
 		$conn = sprintf("host='%s' dbname='%s' user='%s' password='%s'", $db_server, $db_name, $db_user, $db_pass);
 		$db_link = @pg_connect($conn);
-		if (!is_resource($db_link)) {
+		if (!is_resource($db_link) && !is_object($db_link)) {
 			$db_link = null;
 		}
 		if (!$db_link) {
@@ -1142,7 +1142,7 @@ function db_limit($query, $offset, $limit)
 	$limit = (int) $limit;
 
 	$query = trim($query);
-	if (str_ends_with($query, ';')) {
+	if (str_ends_with_internal($query, ';')) {
 		$query = str_cut_end($query, ';');
 	}
 
@@ -1269,6 +1269,8 @@ function db_error()
 	if ('pgsql' == $db_driver) {
 		if ($db_link) {
 			return pg_last_error($db_link);
+		} else {
+			return "couldn't fetch error message";
 		}
 	}
 }
@@ -1842,7 +1844,7 @@ function html_spaces($string)
 	$inside_tag = false;
 	for ($i = 0; $i < strlen($string); $i++)
 	{
-		$c = $string{$i};
+		$c = $string[$i];
 		if ('<' == $c) {
 			$inside_tag = true;
 		}
@@ -1870,8 +1872,8 @@ function query_cut($query)
 
 	for ($i = 0; $i < strlen($query); $i++)
 	{
-		$prev_char = isset($query{$i-1}) ? $query{$i-1} : null;
-		$char = $query{$i};
+		$prev_char = isset($query[$i-1]) ? $query[$i-1] : null;
+		$char = $query[$i];
 		if ($char == $brace_start) {
 			if (!$inside_quote) {
 				$depth++;
@@ -1931,13 +1933,13 @@ function query_strip($query)
 {
 	// strip comments and ';' from the end of query
 	$query = trim($query);
-	if (str_ends_with($query, ';')) {
+	if (str_ends_with_internal($query, ';')) {
 		$query = str_cut_end($query, ';');
 	}
 	$lines = preg_split("#(\r\n|\n|\r)#", $query);
 	foreach ($lines as $k => $line) {
 		$line = trim($line);
-		if (!$line || str_starts_with($line, '--')) {
+		if (!$line || str_starts_with_internal($line, '--')) {
 			unset($lines[$k]);
 		}
 	}
@@ -2590,7 +2592,9 @@ function array_sort_desc($arr, $col_key)
 		}
 		$col_key = '__array_sort';
 	}
-	uasort($arr, create_function('$a,$b', 'return strnatcasecmp($b["'.$col_key.'"], $a["'.$col_key.'"]);'));
+	uasort($arr, function($a, $b) use ($col_key) {
+		return strnatcasecmp($b[$col_key], $a[$col_key]);
+	});
 	if ('__array_sort' == $col_key) {
 		foreach ($arr as $k => $v) {
 			unset($arr[$k]['__array_sort']);
@@ -2882,8 +2886,8 @@ function charset_win_is($string)
 	$win = '¹¥æÆêÊ³£ñÑóÓœŒŸ¿¯';
 	$iso = '±¡æÆêÊ³£ñÑóÓ¶¦¼¬¿¯';
 	for ($i=0; $i<strlen($win); $i++) {
-		if ($win{$i} != $iso{$i}) {
-			if (strstr($string, $win{$i}) !== false) {
+		if ($win[$i] != $iso[$i]) {
+			if (strstr($string, $win[$i]) !== false) {
 				return true;
 			}
 		}
@@ -2897,9 +2901,9 @@ function charset_win_fix($string)
 	$srh = array();
 	$rpl = array();
 	for ($i = 0; $i < strlen($win); $i++) {
-		if ($win{$i} != $iso{$i}) {
-			$srh[] = $win{$i};
-			$rpl[] = $iso{$i};
+		if ($win[$i] != $iso[$i]) {
+			$srh[] = $win[$i];
+			$rpl[] = $iso[$i];
 		}
 	}
 	$string = str_replace($srh, $rpl, $string);
@@ -2996,7 +3000,7 @@ function charset_utf_fix($string)
 	);
 	return str_replace(array_keys($utf_iso), array_values($utf_iso), $string);
 }
-function str_starts_with($str, $start, $ignore_case = false)
+function str_starts_with_internal($str, $start, $ignore_case = false)
 {
 	if ($ignore_case) {
 		$str = str_upper($str);
@@ -3006,19 +3010,19 @@ function str_starts_with($str, $start, $ignore_case = false)
 		return true;
 	}
 	if (!strlen($start)) {
-		trigger_error('str_starts_with() failed, start arg cannot be empty', E_USER_ERROR);
+		trigger_error('str_starts_with_internal() failed, start arg cannot be empty', E_USER_ERROR);
 	}
 	if (strlen($start) > strlen($str)) {
 		return false;
 	}
 	for ($i = 0; $i < strlen($start); $i++) {
-		if ($start{$i} != $str{$i}) {
+		if ($start[$i] != $str[$i]) {
 			return false;
 		}
 	}
 	return true;
 }
-function str_ends_with($str, $end, $ignore_case = false)
+function str_ends_with_internal($str, $end, $ignore_case = false)
 {
 	if ($ignore_case) {
 		$str = str_upper($str);
@@ -3028,24 +3032,24 @@ function str_ends_with($str, $end, $ignore_case = false)
 		return true;
 	}
 	if (!strlen($end)) {
-		trigger_error('str_ends_with() failed, end arg cannot be empty', E_USER_ERROR);
+		trigger_error('str_ends_with_internal() failed, end arg cannot be empty', E_USER_ERROR);
 	}
 	if (strlen($end) > strlen($str)) {
 		return false;
 	}
-	return str_starts_with(strrev($str), strrev($end));
+	return str_starts_with_internal(strrev($str), strrev($end));
 	return true;
 }
 function str_cut_start($str, $start)
 {
-	if (str_starts_with($str, $start)) {
+	if (str_starts_with_internal($str, $start)) {
 		$str = substr($str, strlen($start));
 	}
 	return $str;
 }
 function str_cut_end($str, $end)
 {
-	if (str_ends_with($str, $end)) {
+	if (str_ends_with_internal($str, $end)) {
 		$str = substr($str, 0, -strlen($end));
 	}
 	return $str;
@@ -3070,12 +3074,12 @@ function dir_exists($dir)
 {
 	return file_exists($dir) && !is_file($dir);
 }
-function dir_delete_old_files($dir, $ext = array(), $sec)
+function dir_delete_old_files($dir, $allow_ext, $seconds)
 {
 	// NOT USED right now.
 	// older than x seconds
-	$files = dir_read($dir, null, $ext);
-	$time = time() - $sec;
+	$files = dir_read($dir, null, $allow_ext);
+	$time = time() - $seconds;
 	foreach ($files as $file) {
 		if (file_time($file) < $time) {
 			unlink($file);
@@ -3149,7 +3153,7 @@ function str_array($str)
 {
 	$arr = array();
 	for ($i = 0; $i < strlen($str); $i++) {
-		$arr[$i] = $str{$i};
+		$arr[$i] = $str[$i];
 	}
 	return $arr;
 }
@@ -3167,10 +3171,10 @@ function iso_chars_upper()
 }
 function array_first_key($arr)
 {
-	$arr2 = $arr;
-	reset($arr);
-	list($key, $val) = each($arr);
-	return $key;
+	foreach ($arr as $key => $val) {
+		return $key;
+	}
+	return NULL;
 }
 function array_first($arr)
 {
@@ -4207,7 +4211,7 @@ function listing($base_query, $md5_get = false)
 	$queries = preg_split("#;(\s*--[ \t\S]*)?(\r\n|\n|\r)#U", $post['sql']);
 	foreach ($queries as $k => $query) {
 		$query = query_strip($query);
-		if (str_starts_with($query, '@')) {
+		if (str_starts_with_internal($query, '@')) {
 			$is_sel = true;
 		}
 		$queries[$k] = $query;
@@ -4266,7 +4270,7 @@ function listing($base_query, $md5_get = false)
 							if (!$get['md5']) { continue; }
 						}
 						if ($is_sel) {
-							if (str_starts_with($query, '@')) {
+							if (str_starts_with_internal($query, '@')) {
 								$query = str_cut_start($query, '@');
 							} else {
 								if (!$get['md5']) { continue; }
