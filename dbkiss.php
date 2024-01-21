@@ -3,6 +3,8 @@
 // All rights reserved. Licensed under BSD 3-clause license.
 // Project website: https://github.com/cztomczak/dbkiss
 
+define('DBKISS_VERSION', "1.30");
+
 // zlib conflicts with ob_gzhandler.
 ini_set('zlib.output_compression', 0);
 ini_set('output_buffering', 0);
@@ -63,6 +65,8 @@ if (!defined('DBKISS_SQL_DIR')) {
 /*
 	Changelog:
 
+	1.30
+		* Support for PHP 7.4, 8.1 and 8.3
 	1.20
 		* Support for PHP 7 and PostgreSQL (Issue #2)
 		* Support for MySQL in PHP 7 via mysqli driver (Issue #3)
@@ -3450,7 +3454,7 @@ function powered_by()
 			w.document.close();
 		}
 		</script>
-		<div style="text-align: center; margin-top: 2em; border-top: #ccc 1px solid; padding-top: 0.5em;">Powered by <a href="javascript:void(0)" onclick="link_noreferer('https://github.com/cztomczak/dbkiss')">dbkiss</a></div>
+		<div style="text-align: center; margin-top: 2em; border-top: #ccc 1px solid; padding-top: 0.5em;">Powered by <a href="javascript:void(0)" onclick="link_noreferer('https://github.com/cztomczak/dbkiss')">dbkiss</a> v<?php echo DBKISS_VERSION; ?></div>
 	<?php
 }
 
