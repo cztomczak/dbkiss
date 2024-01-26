@@ -61,6 +61,7 @@ log in form except for password.
 
 ## Donations
 
+* 2024-01-26: Patrick McGovern sponsored the development of PHP 8 support.
 * 2019-02-04: Patrick McGovern sponsored the development of PHP 7 support.
 * 2014-01-04: Patrick McGovern sponsored the development of the permalinks
               features for saved SQL templates.
